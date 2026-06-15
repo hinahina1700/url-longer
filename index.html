@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>カスタムURL長文化ツール</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f4f6f9;
+            color: #333;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        h2 { margin-top: 0; color: #222; text-align: center; }
+        .form-group { margin-bottom: 15px; }
+        label { font-weight: bold; font-size: 14px; color: #555; }
+        input {
+            width: 100%;
+            padding: 12px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        input[type="number"] { width: 100px; }
+        
+        .primary-btn {
+            width: 100%;
+            padding: 14px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        .primary-btn:hover { background-color: #0056b3; }
+        
+        .copy-btn {
+            width: 100%;
+            padding: 12px;
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 15px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
+            transition: background-color 0.2s;
+        }
+        .copy-btn.success {
+            background-color: #28a745;
+        }
+
+        #result {
+            margin-top: 25px;
+            padding: 15px;
+            background: #e9ecef;
+            border-radius: 6px;
+        }
+        #outputUrl {
+            word-break: break-all;
+            background: white;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 13px;
+            max-height: 150px;
+            overflow-y: auto;
+            margin: 5px 0;
+        }
+        .cushion-btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background: #28a745;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: bold;
+            margin-top: 15px;
+        }
+        .cushion-btn:hover { background: #218838; }
+    </style>
+</head>
+<body>
+
+    <div id="mainPage" class="container">
+        <h2>URL長文化ツール</h2>
+        <p style="text-align: center; color: #666; margin-top: -10px; margin-bottom: 20px;">短すぎるURLを、あえてめちゃくちゃ長くします。</p>
+        
+        <div class="form-group">
+            <label for="targetUrl">① 転送先のURL</label>
+            <input type="text" id="targetUrl" placeholder="https://info.hina17.com" required>
+        </div>
+
+        <div class="form-group">
+            <label for="favText">② 埋め込みたい好きな文字列</label>
+            <input type="text" id="favText" placeholder="suki-na-moji" value="longurl">
+        </div>
+
+        <div class="form-group">
+            <label for="repeatCount">③ 繰り返す回数</label><br>
+            <input type="number" id="repeatCount" value="50" min="1" max="500"> 回
+        </div>
+
+        <button class="primary-btn" onclick="makeLongUrl()">URLを限界突破させる</button>
+
+        <div id="result" style="display:none;">
+            <strong>完成した長いURL：</strong>
+            <p id="outputUrl"></p>
+            <button id="copyBtn" class="copy-btn" onclick="copyToClipboard()">URLをコピーする</button>
+        </div>
+    </div>
+
+    <div id="cushionPage" class="container" style="display:none; text-align:center;">
+        <h2>移動前の安全確認</h2>
+        <p>以下のURLへ移動しようとしています。本当に移動しますか？</p>
+        <p id="destinationUrl" style="color:#d9534f; font-weight:bold; word-break:break-all; background:#f8d7da; padding:10px; border-radius:6px;"></p>
+        
+        <a id="jumpLink" href="#" class="cushion-btn">安全を確認して移動する</a>
+        <br><br>
+        <a href="?" style="color:#6c757d; font-size: 14px;">自分も長文化ツールを使う</a>
+    </div>
+
+    <footer style="text-align: center; margin-top: 40px; font-size: 13px; color: #888;">
+        &copy; hinahina17dayo
+    </footer>
+
+    <script>
+        // --- ページ読み込み時の処理（クッション判定） ---
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const encodedTo = urlParams.get('to');
+
+            if (encodedTo) {
+                try {
+                    let targetUrl = decodeURIComponent(encodedTo);
+
+                    if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) {
+                        targetUrl = 'https://' + targetUrl;
+                    }
+
+                    document.getElementById('mainPage').style.display = 'none';
+                    document.getElementById('cushionPage').style.display = 'block';
+
+                    document.getElementById('destinationUrl').innerText = targetUrl;
+                    document.getElementById('jumpLink').href = targetUrl;
+                } catch (e) {
+                    alert("URLの解析に失敗しました。");
+                }
+            }
+        }
+
+        // --- 長文化ボタンを押したときの処理 ---
+        function makeLongUrl() {
+            let target = document.getElementById('targetUrl').value.trim();
+            let favText = document.getElementById('favText').value;
+            const count = parseInt(document.getElementById('repeatCount').value) || 1;
+
+            if (!target) return alert('転送先URLを入力してください');
+            if (!favText) favText = "x";
+
+            favText = encodeURIComponent(favText.replace(/\s+/g, '-'));
+
+            const baseUrl = window.location.origin + window.location.pathname;
+            const longText = (favText + "-").repeat(count); 
+            const encodedTarget = encodeURIComponent(target);
+
+            const longUrl = `${baseUrl}?dummy=${longText}&to=${encodedTarget}`;
+
+            document.getElementById('outputUrl').innerText = longUrl;
+            
+            const copyBtn = document.getElementById('copyBtn');
+            copyBtn.innerText = "URLをコピーする";
+            copyBtn.classList.remove('success');
+
+            document.getElementById('result').style.display = 'block';
+        }
+
+        // --- コピーボタンを押したときの処理 ---
+        function copyToClipboard() {
+            const urlText = document.getElementById('outputUrl').innerText;
+            
+            navigator.clipboard.writeText(urlText).then(() => {
+                const copyBtn = document.getElementById('copyBtn');
+                copyBtn.innerText = "コピーしました！";
+                copyBtn.classList.add('success');
+                
+                setTimeout(() => {
+                    copyBtn.innerText = "URLをコピーする";
+                    copyBtn.classList.remove('success');
+                }, 2000);
+            }).catch(err => {
+                alert('コピーに失敗しました。枠内の文字を直接コピーしてください。');
+            });
+        }
+    </script>
+</body>
+</html>
