@@ -22,7 +22,7 @@
         h2 { margin-top: 0; color: #222; text-align: center; }
         .form-group { margin-bottom: 15px; }
         label { font-weight: bold; font-size: 14px; color: #555; }
-        input {
+        input[type="text"] {
             width: 100%;
             padding: 12px;
             margin-top: 5px;
@@ -31,8 +31,41 @@
             box-sizing: border-box;
             font-size: 16px;
         }
-        input[type="number"] { width: 100px; }
+        input[type="number"] { width: 100px; padding: 8px; }
         
+        /* 同意チェックエリア */
+        .agreement-area {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 1px solid #e9ecef;
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #444;
+        }
+        .checkbox-group input {
+            margin-right: 10px;
+            margin-top: 4px;
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+        .checkbox-group a {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .checkbox-group a:hover {
+            text-decoration: underline;
+        }
+
+        /* 生成ボタン（無効時はグレーになる） */
         .primary-btn {
             width: 100%;
             padding: 14px;
@@ -44,8 +77,14 @@
             cursor: pointer;
             font-weight: bold;
             margin-top: 10px;
+            transition: background-color 0.2s;
         }
         .primary-btn:hover { background-color: #0056b3; }
+        .primary-btn:disabled {
+            background-color: #cccccc !important;
+            color: #666666;
+            cursor: not-allowed;
+        }
         
         .copy-btn {
             width: 100%;
@@ -60,9 +99,7 @@
             margin-top: 10px;
             transition: background-color 0.2s;
         }
-        .copy-btn.success {
-            background-color: #28a745;
-        }
+        .copy-btn.success { background-color: #28a745; }
 
         #result {
             margin-top: 25px;
@@ -116,7 +153,18 @@
             <input type="number" id="repeatCount" value="50" min="1" max="500"> 回
         </div>
 
-        <button class="primary-btn" onclick="makeLongUrl()">URLを限界突破させる</button>
+        <div class="agreement-area">
+            <label class="checkbox-group">
+                <input type="checkbox" id="agreeTerms" onchange="checkAgreement()">
+                <span><a href="terms.html" target="_blank">利用規約</a> を読み、これに同意します。</span>
+            </label>
+            <label class="checkbox-group">
+                <input type="checkbox" id="agreePrivacy" onchange="checkAgreement()">
+                <span><a href="privacy.html" target="_blank">プライバシーポリシー</a> を読み、これに同意します。</span>
+            </label>
+        </div>
+
+        <button id="submitBtn" class="primary-btn" onclick="makeLongUrl()" disabled>URLを限界突破させる</button>
 
         <div id="result" style="display:none;">
             <strong>完成した長いURL：</strong>
@@ -136,11 +184,29 @@
     </div>
 
     <footer style="text-align: center; margin-top: 40px; font-size: 13px; color: #888;">
+        <a href="terms.html" style="color: #007bff; text-decoration: none;">利用規約</a>
+        <span style="margin: 0 10px;">|</span>
+        <a href="privacy.html" style="color: #007bff; text-decoration: none;">プライバシーポリシー</a>
+        <br><br>
         &copy; hinahina17dayo
     </footer>
 
     <script>
-        // --- ページ読み込み時の処理（クッション判定） ---
+        // --- チェックボックスの状態を監視する処理 ---
+        function checkAgreement() {
+            const agreeTerms = document.getElementById('agreeTerms').checked;
+            const agreePrivacy = document.getElementById('agreePrivacy').checked;
+            const submitBtn = document.getElementById('submitBtn');
+
+            // 両方にチェックが入ったらボタンを使えるようにする
+            if (agreeTerms && agreePrivacy) {
+                submitBtn.disabled = false;
+            } else {
+                submitBtn.disabled = true;
+            }
+        }
+
+        // --- ページ読み込み時の処理 ---
         window.onload = function() {
             const urlParams = new URLSearchParams(window.location.search);
             const encodedTo = urlParams.get('to');
